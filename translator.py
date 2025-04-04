@@ -4,7 +4,7 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, DEFAULT_ORIGINAL_LANG
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv
-from kv_namespace_resolver import get_kv_namespace_id_for_english_original
+from kv_namespace_resolver import get_kv_namespace_for_video
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
