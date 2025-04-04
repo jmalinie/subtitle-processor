@@ -1,25 +1,24 @@
-# app.py
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
-CORS(app, resources={r"/process": {"origins": "*"}})  # Gerekirse sadece "https://elosito.com" yaz
+CORS(app, origins="https://elosito.com", supports_credentials=True)
 
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
 @app.route("/process", methods=["POST", "OPTIONS"])
-@cross_origin(origins="*")  # Gerekirse sadece "https://elosito.com"
 def process():
+    # Handle preflight OPTIONS request explicitly
     if request.method == "OPTIONS":
-        response = jsonify({'message': 'CORS preflight'})
-        response.headers.add("Access-Control-Allow-Origin", "*")  # Gerekirse "https://elosito.com"
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-        return response, 200
+        response = app.make_default_options_response()
+        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
 
     data = request.get_json()
     url = data.get("url")
@@ -37,7 +36,7 @@ def process():
             "video_id": video_id,
             "original_json": f"en/original/{video_id}.json",
             "translated_json": f"en/translated/{target_lang}/{video_id}.json"
-        })
+        }), 200
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
