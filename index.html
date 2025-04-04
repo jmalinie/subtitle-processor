@@ -41,15 +41,10 @@
           body: JSON.stringify({ url, target_lang: targetLang })
         });
 
-        resultDiv.textContent = "⬇️ Altyazı indirildi.\n🌍 Çeviri yapılıyor...\n⏳ Lütfen bekleyin...";
-
         const data = await response.json();
 
-        if (response.status === 200 && data.status === "ok") {
-          resultDiv.textContent =
-            `✅ Başarılı!\n` +
-            `Orijinal: ${data.original_json}\n` +
-            `Çeviri: ${data.translated_json}`;
+        if (response.status === 202 && data.status === "processing") {
+          checkStatus(data.job_id);
         } else {
           resultDiv.textContent = "❌ Hata: " + (data.message || "Bilinmeyen bir sorun oluştu.");
         }
@@ -57,6 +52,33 @@
         console.error(err);
         resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
       }
+    }
+
+    function checkStatus(jobId) {
+      const resultDiv = document.getElementById("result");
+      resultDiv.textContent = "⏳ Altyazılar hazırlanıyor...";
+
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`https://api.elosito.com/status/${jobId}`);
+          const statusData = await response.json();
+
+          if (statusData.status === 'completed') {
+            clearInterval(interval);
+            resultDiv.textContent =
+              `✅ Başarılı!\n` +
+              `Orijinal: ${statusData.result.original_json}\n` +
+              `Çeviri: ${statusData.result.translated_json}`;
+          } else if (statusData.status === 'error') {
+            clearInterval(interval);
+            resultDiv.textContent = "❌ Hata: " + statusData.error_message;
+          }
+        } catch (err) {
+          clearInterval(interval);
+          console.error(err);
+          resultDiv.textContent = "❌ Durum kontrol edilirken hata oluştu.";
+        }
+      }, 5000);
     }
   </script>
 </body>
