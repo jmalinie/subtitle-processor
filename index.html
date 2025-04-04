@@ -4,31 +4,19 @@
   <meta charset="UTF-8">
   <title>🎬 YouTube Altyazı Çevirici</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    input, button {
-      font-size: 1rem;
-      padding: 8px;
-      margin-top: 5px;
-    }
-    #result {
-      margin-top: 20px;
-      white-space: pre-line;
-      font-weight: bold;
-    }
+    body { font-family: Arial; padding: 20px; max-width: 700px; margin: auto; }
+    #result { margin-top: 20px; white-space: pre-line; font-weight: bold; color: #222; }
+    .error { color: red; }
+    .success { color: green; }
   </style>
 </head>
 <body>
   <h2>🎬 YouTube Altyazı Çevirici</h2>
 
-  <label for="url">YouTube URL:</label><br>
+  <label>YouTube URL:</label><br>
   <input type="text" id="url" size="60" placeholder="https://www.youtube.com/watch?v=..." /><br><br>
 
-  <label for="target_lang">Hedef Dil (örnek: tr, es, de):</label><br>
+  <label>Hedef Dil (örnek: tr, es, de):</label><br>
   <input type="text" id="target_lang" value="tr" /><br><br>
 
   <button onclick="sendRequest()">Çevir</button>
@@ -36,22 +24,20 @@
   <div id="result"></div>
 
   <script>
-    const backendURL = "https://youtube-subtitle-api-production.up.railway.app/process";
-
     async function sendRequest() {
       const url = document.getElementById("url").value.trim();
       const targetLang = document.getElementById("target_lang").value.trim();
       const resultDiv = document.getElementById("result");
 
       if (!url || !targetLang) {
-        resultDiv.textContent = "❗ YouTube URL ve hedef dil giriniz.";
+        resultDiv.innerHTML = '<span class="error">❗ YouTube URL ve hedef dil giriniz.</span>';
         return;
       }
 
       resultDiv.textContent = "🔍 Altyazı aranıyor, lütfen bekleyin...";
 
       try {
-        const response = await fetch(backendURL, {
+        const response = await fetch("https://subtitle-processor-production.up.railway.app/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url, target_lang: targetLang })
@@ -61,17 +47,17 @@
 
         const data = await response.json();
 
-        if (response.ok && data.status === "ok") {
+        if (response.status === 200 && data.status === "ok") {
           resultDiv.innerHTML =
-            `✅ <span style="color:green;">Başarılı!</span><br>` +
-            `Orijinal: <a href="https://cdn.elosito.com/${data.original_json}" target="_blank">${data.original_json}</a><br>` +
-            `Çeviri: <a href="https://cdn.elosito.com/${data.translated_json}" target="_blank">${data.translated_json}</a>`;
+            `<span class="success">✅ Başarılı!</span>\n` +
+            `Orijinal: <code>${data.original_json}</code>\n` +
+            `Çeviri: <code>${data.translated_json}</code>`;
         } else {
-          resultDiv.innerHTML = "❌ Hata: " + (data.message || "Bilinmeyen bir sorun oluştu.");
+          resultDiv.innerHTML = '<span class="error">❌ Hata: ' + (data.message || "Bilinmeyen bir sorun oluştu.") + '</span>';
         }
       } catch (err) {
         console.error(err);
-        resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
+        resultDiv.innerHTML = '<span class="error">❌ Ağ hatası veya sunucu yanıt vermedi.</span>';
       }
     }
   </script>
