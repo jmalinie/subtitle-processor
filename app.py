@@ -1,21 +1,17 @@
-# app.py
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
-CORS(app, origins=["https://elosito.com"], methods=["POST", "OPTIONS"], allow_headers=["Content-Type"])
+CORS(app)  # Tüm domainlere izin ver
 
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
-@app.route("/process", methods=["POST", "OPTIONS"])
+@app.route("/process", methods=["POST"])
 def process():
-    if request.method == "OPTIONS":
-        return '', 204
-
     data = request.get_json()
     url = data.get("url")
     target_lang = data.get("target_lang")
@@ -33,6 +29,7 @@ def process():
             "original_json": f"en/original/{video_id}.json",
             "translated_json": f"en/translated/{target_lang}/{video_id}.json"
         })
+
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
