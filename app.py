@@ -5,6 +5,7 @@ from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/")
 def index():
