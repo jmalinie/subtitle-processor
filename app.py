@@ -1,3 +1,4 @@
+# CORS support for API access on elosito.com
 # app.py
 from flask_cors import CORS
 from flask import Flask, request, jsonify, send_from_directory
