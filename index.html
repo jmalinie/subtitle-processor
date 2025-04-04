@@ -17,12 +17,12 @@
   <label>Hedef Dil (örnek: tr, es, de):</label><br>
   <input type="text" id="target_lang" value="tr" /><br><br>
 
-  <button onclick="sendRequest()">Çevir</button>
+  <button onclick="startProcess()">Çevir</button>
 
   <div id="result"></div>
 
   <script>
-    async function sendRequest() {
+    async function startProcess() {
       const url = document.getElementById("url").value.trim();
       const targetLang = document.getElementById("target_lang").value.trim();
       const resultDiv = document.getElementById("result");
@@ -44,9 +44,9 @@
         const data = await response.json();
 
         if (response.status === 202 && data.status === "processing") {
-          checkStatus(data.job_id);
+          checkJobStatus(data.job_id);
         } else {
-          resultDiv.textContent = "❌ Hata: " + (data.message || "Bilinmeyen bir sorun oluştu.");
+          resultDiv.textContent = "❌ İşlem başlatılamadı: " + (data.message || "Bilinmeyen hata.");
         }
       } catch (err) {
         console.error(err);
@@ -54,31 +54,32 @@
       }
     }
 
-    function checkStatus(jobId) {
+    async function checkJobStatus(job_id) {
       const resultDiv = document.getElementById("result");
-      resultDiv.textContent = "⏳ Altyazılar hazırlanıyor...";
 
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`https://api.elosito.com/status/${jobId}`);
-          const statusData = await response.json();
+          const statusResponse = await fetch(`https://api.elosito.com/status/${job_id}`);
+          const statusData = await statusResponse.json();
 
-          if (statusData.status === 'completed') {
+          if (statusData.status === "completed") {
             clearInterval(interval);
             resultDiv.textContent =
               `✅ Başarılı!\n` +
-              `Orijinal: ${statusData.result.original_json}\n` +
-              `Çeviri: ${statusData.result.translated_json}`;
-          } else if (statusData.status === 'error') {
+              `Orijinal: ${statusData.original_json}\n` +
+              `Çeviri: ${statusData.translated_json}`;
+          } else if (statusData.status === "error") {
             clearInterval(interval);
-            resultDiv.textContent = "❌ Hata: " + statusData.error_message;
+            resultDiv.textContent = "❌ Hata: " + statusData.message;
+          } else {
+            resultDiv.textContent = "⏳ " + statusData.message;
           }
         } catch (err) {
           clearInterval(interval);
           console.error(err);
-          resultDiv.textContent = "❌ Durum kontrol edilirken hata oluştu.";
+          resultDiv.textContent = "❌ Durum sorgulanırken hata oluştu.";
         }
-      }, 5000);
+      }, 3000);
     }
   </script>
 </body>
