@@ -1,50 +1,60 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from threading import Thread
+import uuid
+import time
+
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
 CORS(app, origins="https://elosito.com")
 
+jobs = {}
+
+def background_job(job_id, url, target_lang):
+    try:
+        video_id = process_subtitles(url, target_lang)
+        translate_and_upload(video_id, "en", target_lang)
+
+        jobs[job_id]['status'] = 'completed'
+        jobs[job_id]['result'] = {
+            "video_id": video_id,
+            "original_json": f"en/original/{video_id}.json",
+            "translated_json": f"en/translated/{target_lang}/{video_id}.json"
+        }
+    except Exception as e:
+        jobs[job_id]['status'] = 'error'
+        jobs[job_id]['error_message'] = str(e)
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
-@app.route("/process", methods=["POST", "OPTIONS"])
+@app.route("/process", methods=["POST"])
 def process():
-    if request.method == "OPTIONS":
-        response = jsonify({"status": "ok"})
-        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
-        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        return response, 200
-
     data = request.get_json()
     url = data.get("url")
     target_lang = data.get("target_lang")
 
     if not url or not target_lang:
-        response = jsonify({"status": "error", "message": "Eksik veri gönderildi."})
-        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
-        return response, 400
+        return jsonify({"status": "error", "message": "Eksik veri gönderildi."}), 400
 
-    try:
-        video_id = process_subtitles(url, target_lang)
-        translate_and_upload(video_id, "en", target_lang)
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "processing"}
 
-        response = jsonify({
-            "status": "ok",
-            "video_id": video_id,
-            "original_json": f"en/original/{video_id}.json",
-            "translated_json": f"en/translated/{target_lang}/{video_id}.json"
-        })
-        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
-        return response
+    thread = Thread(target=background_job, args=(job_id, url, target_lang))
+    thread.start()
 
-    except Exception as e:
-        response = jsonify({"status": "error", "message": str(e)})
-        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
-        return response, 500
+    return jsonify({"status": "processing", "job_id": job_id}), 202
+
+@app.route("/status/<job_id>", methods=["GET"])
+def status(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"status": "error", "message": "Geçersiz job ID"}), 404
+
+    return jsonify(job)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
