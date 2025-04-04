@@ -1,6 +1,5 @@
 # CORS support for API access on elosito.com
-# app.py
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from flask import Flask, request, jsonify, send_from_directory
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
@@ -12,8 +11,12 @@ CORS(app)
 def index():
     return send_from_directory(".", "index.html")
 
-@app.route("/process", methods=["POST"])
+@app.route("/process", methods=["POST", "OPTIONS"])
+@cross_origin()
 def process():
+    if request.method == "OPTIONS":
+        return '', 200
+
     data = request.get_json()
     url = data.get("url")
     target_lang = data.get("target_lang")
@@ -36,6 +39,4 @@ def process():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    # CORS support for API access on elosito.com
-
+    app.run(host="0.0.0.0", port=8080)  # Railway için önemli
