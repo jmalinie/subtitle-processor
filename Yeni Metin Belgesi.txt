@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Altyazı Çevirici</title>
+</head>
+<body>
+  <h2>🎬 YouTube Altyazı Çevirici</h2>
+
+  <form id="translateForm">
+    <label for="videoUrl">YouTube URL:</label><br>
+    <input type="text" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=..." required><br><br>
+
+    <label for="targetLang">Hedef Dil (örnek: tr, es, de):</label><br>
+    <input type="text" id="targetLang" name="targetLang" placeholder="tr" required><br><br>
+
+    <button type="submit">Çevir</button>
+  </form>
+
+  <div id="result" style="margin-top:20px;"></div>
+
+  <script>
+    document.getElementById('translateForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const videoUrl = document.getElementById('videoUrl').value.trim();
+      const targetLang = document.getElementById('targetLang').value.trim();
+
+      const videoId = new URL(videoUrl).searchParams.get("v");
+      if (!videoId) {
+        document.getElementById('result').innerText = "❌ Geçerli bir YouTube video URL’si girin.";
+        return;
+      }
+
+      const response = await fetch("http://127.0.0.1:5000/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          video_id: videoId,
+          target_lang: targetLang
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.status === 200 && result.status === "ok") {
+        document.getElementById('result').innerHTML = `
+          ✅ Başarılı!<br>
+          Orijinal JSON: <code>${result.original_json}</code><br>
+          Çeviri JSON: <code>${result.translated_json}</code>
+        `;
+      } else {
+        document.getElementById('result').innerText = "❌ Hata: " + (result.error || "İşlem başarısız.");
+      }
+    });
+  </script>
+</body>
+</html>
