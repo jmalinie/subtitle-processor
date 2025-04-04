@@ -1,20 +1,22 @@
 # CORS support for API access on elosito.com
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from flask import Flask, request, jsonify, send_from_directory
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS konfigürasyonu: yalnızca elosito.com'a izin ver
+CORS(app, resources={r"/*": {"origins": "https://elosito.com"}}, supports_credentials=True)
 
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
 @app.route("/process", methods=["POST", "OPTIONS"])
-@cross_origin()
 def process():
     if request.method == "OPTIONS":
+        # Preflight için 200 OK dön
         return '', 200
 
     data = request.get_json()
