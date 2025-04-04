@@ -1,23 +1,25 @@
-# CORS support for API access on elosito.com
-from flask_cors import CORS
+# app.py
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS, cross_origin
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
-
-# CORS konfigürasyonu: yalnızca elosito.com'a izin ver
-CORS(app, resources={r"/*": {"origins": "https://elosito.com"}}, supports_credentials=True)
+CORS(app, resources={r"/process": {"origins": "*"}})  # Gerekirse sadece "https://elosito.com" yaz
 
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
 @app.route("/process", methods=["POST", "OPTIONS"])
+@cross_origin(origins="*")  # Gerekirse sadece "https://elosito.com"
 def process():
     if request.method == "OPTIONS":
-        # Preflight için 200 OK dön
-        return '', 200
+        response = jsonify({'message': 'CORS preflight'})
+        response.headers.add("Access-Control-Allow-Origin", "*")  # Gerekirse "https://elosito.com"
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
 
     data = request.get_json()
     url = data.get("url")
@@ -41,4 +43,4 @@ def process():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)  # Railway için önemli
+    app.run(host="0.0.0.0", port=8080)
