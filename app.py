@@ -4,7 +4,7 @@ from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
 
 app = Flask(__name__)
-CORS(app, origins=["https://elosito.com"])
+CORS(app, origins="https://elosito.com")
 
 @app.route("/")
 def index():
@@ -14,9 +14,9 @@ def index():
 def process():
     if request.method == "OPTIONS":
         response = jsonify({"status": "ok"})
-        response.headers.add("Access-Control-Allow-Origin", "https://elosito.com")
-        response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         return response, 200
 
     data = request.get_json()
@@ -24,7 +24,9 @@ def process():
     target_lang = data.get("target_lang")
 
     if not url or not target_lang:
-        return jsonify({"status": "error", "message": "Eksik veri gönderildi."}), 400
+        response = jsonify({"status": "error", "message": "Eksik veri gönderildi."})
+        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
+        return response, 400
 
     try:
         video_id = process_subtitles(url, target_lang)
@@ -36,13 +38,12 @@ def process():
             "original_json": f"en/original/{video_id}.json",
             "translated_json": f"en/translated/{target_lang}/{video_id}.json"
         })
-
-        response.headers.add("Access-Control-Allow-Origin", "https://elosito.com")
+        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
         return response
 
     except Exception as e:
         response = jsonify({"status": "error", "message": str(e)})
-        response.headers.add("Access-Control-Allow-Origin", "https://elosito.com")
+        response.headers["Access-Control-Allow-Origin"] = "https://elosito.com"
         return response, 500
 
 if __name__ == "__main__":
