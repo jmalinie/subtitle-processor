@@ -1,4 +1,5 @@
 # app.py
+from flask_cors import CORS
 from flask import Flask, request, jsonify, send_from_directory
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
