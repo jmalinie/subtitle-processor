@@ -36,3 +36,5 @@ def process():
 
 if __name__ == "__main__":
     app.run(debug=True)
+    # CORS support for API access on elosito.com
+
