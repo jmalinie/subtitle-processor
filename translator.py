@@ -17,8 +17,6 @@ def translate_text(text, source_lang, target_lang):
     return response.choices[0].message.content.strip()
 
 def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
-    print(f"🔵 DEBUG Translator.py namespace_id: {namespace_id}")
-
     original_json_path = f"downloads/{video_id}_{source_lang}.json"
     if not os.path.exists(original_json_path):
         raise Exception(f"JSON bulunamadı: {original_json_path}")
@@ -41,12 +39,12 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
         "language": target_lang,
         "language_code": target_lang,
         "translated_from": source_lang,
-        "video_id": video_id,
+        "video_id": video_id.lower(),
         "snippets": translated_snippets
     }
 
-    json_filename = f"{video_id}_{source_lang}_{target_lang}.json"
-    txt_filename = f"{video_id}_{source_lang}_{target_lang}.txt"
+    json_filename = f"{video_id.lower()}_{source_lang}_{target_lang}.json"
+    txt_filename = f"{video_id.lower()}_{source_lang}_{target_lang}.txt"
     json_path = os.path.join("downloads", json_filename)
     txt_path = os.path.join("downloads", txt_filename)
 
@@ -57,18 +55,11 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
         for item in translated_snippets:
             tf.write(item["text"] + "\n")
 
-    print(f"✅ Çeviri dosyaları oluşturuldu: {json_path}, {txt_path}")
-
-    json_key = f"{source_lang}/translated/{target_lang}/{video_id}.json"
-    txt_key = f"{source_lang}/translated/{target_lang}/{video_id}.txt"
+    json_key = f"{source_lang}/translated/{target_lang}/{video_id.lower()}.json"
+    txt_key = f"{source_lang}/translated/{target_lang}/{video_id.lower()}.txt"
     upload_to_r2(json_path, json_key)
     upload_to_r2(txt_path, txt_key)
 
-    kv_key = f"{source_lang}:{video_id}:{target_lang}"
-    kv_value = {
-        "json": json_key,
-        "txt": txt_key
-    }
+    kv_key = f"{source_lang}:{video_id.lower()}:{target_lang}"
+    kv_value = {"json": json_key, "txt": txt_key}
     write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
-
-    print("🎉 Çeviri işlemi tamamlandı!")
