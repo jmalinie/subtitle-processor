@@ -1,9 +1,9 @@
-# processor.py
 import os
 import re
 from subtitles_fetcher import fetch_subtitles
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv
+from kv_namespace_resolver import get_kv_namespace_id_for_english_original
 
 def extract_video_id(url: str) -> str:
     # YouTube video ID'sini URL'den çıkarır
@@ -33,6 +33,9 @@ def process_subtitles(youtube_url: str, target_lang: str) -> str:
         "json": json_key,
         "txt": txt_key
     }
-    write_to_kv(kv_key, kv_value)
+
+    # namespace_id eksikti, buraya eklendi
+    namespace_id = get_kv_namespace_id_for_english_original(video_id)
+    write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
 
     return video_id
