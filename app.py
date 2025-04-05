@@ -13,7 +13,6 @@ CORS(app, origins=["https://elosito.com"])
 
 jobs = {}
 
-# KV bilgilerini .env'den al
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
 
@@ -25,17 +24,14 @@ def kv_get(key, namespace_id):
 
 def background_task(job_id, video_id, url, target_lang):
     try:
-        # İlk kez namespace bul
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
 
-        # Namespace kontrolü yap
         if not namespace_id:
             jobs[job_id] = {"status": "error", "message": "Varsayılan KV namespace tanımlı değil!"}
             return
 
         kv_key = f"en:{video_id}:{target_lang}"
 
-        # KV kontrolü yap
         if kv_get(kv_key, namespace_id):
             jobs[job_id] = {
                 "status": "completed",
@@ -47,13 +43,9 @@ def background_task(job_id, video_id, url, target_lang):
             }
             return
 
-        # İlk işleme (orijinal altyazı)
         process_subtitles(url, target_lang)
-
-        # Namespace'i doğrudan çeviri fonksiyonuna gönder
         translate_and_upload(video_id, "en", target_lang, namespace_id)
 
-        # İşlem tamamlandı
         jobs[job_id] = {
             "status": "completed",
             "video_id": video_id,
@@ -65,8 +57,6 @@ def background_task(job_id, video_id, url, target_lang):
 
     except Exception as e:
         jobs[job_id] = {"status": "error", "message": f"Backend hata: {str(e)}"}
-
-
 
 @app.route("/")
 def index():

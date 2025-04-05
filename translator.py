@@ -4,12 +4,11 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, DEFAULT_ORIGINAL_LANG
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv
-from kv_namespace_resolver import get_kv_namespace_id_for_english_original
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def translate_text(text, source_lang, target_lang):
-    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text} .Just plain translate, do not comment. "
+    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text}\nJust plain translate, do not comment."
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
@@ -18,6 +17,8 @@ def translate_text(text, source_lang, target_lang):
     return response.choices[0].message.content.strip()
 
 def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
+    print(f"🔵 DEBUG Translator.py namespace_id: {namespace_id}")
+
     original_json_path = f"downloads/{video_id}_{source_lang}.json"
     if not os.path.exists(original_json_path):
         raise Exception(f"JSON bulunamadı: {original_json_path}")
@@ -68,9 +69,6 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
         "json": json_key,
         "txt": txt_key
     }
-    # namespace_id'yi burada kullanıyoruz
     write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
 
     print("🎉 Çeviri işlemi tamamlandı!")
-
-
