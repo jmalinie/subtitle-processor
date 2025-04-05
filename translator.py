@@ -4,12 +4,12 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, DEFAULT_ORIGINAL_LANG
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv
-from kv_namespace_resolver import get_kv_namespace_for_video
+from kv_namespace_resolver import get_kv_namespace_id_for_english_original
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def translate_text(text, source_lang, target_lang):
-    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text}"
+    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text} .Just plain translate, do not comment. "
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
@@ -64,8 +64,7 @@ def translate_subtitles(video_id, source_lang, target_lang):
     upload_to_r2(json_path, json_key)
     upload_to_r2(txt_path, txt_key)
 
-    # 🔑 Hangi namespace'e yazılacağını belirle
-    namespace_id = get_kv_namespace_for_video(video_id)
+    namespace_id = get_kv_namespace_id_for_english_original(video_id)
     kv_key = f"{source_lang}:{video_id}:{target_lang}"
     kv_value = {
         "json": json_key,
