@@ -44,11 +44,12 @@
 
         const data = await response.json();
 
-        if (response.status === 202 && data.job_id) {
-          checkStatusPeriodically(data.job_id);
-        } else {
+        if (data.status !== "ok") {
           resultDiv.textContent = "❌ İşlem başlatılamadı: " + (data.message || "Bilinmeyen hata.");
+          return;
         }
+
+        checkStatusPeriodically(data.job_id);
       } catch (err) {
         console.error(err);
         resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
@@ -83,7 +84,7 @@
           console.error(err);
           resultDiv.textContent = "❌ Durum sorgulanırken hata oluştu.";
         }
-      }, 5000); // Her 5 saniyede bir kontrol edilir.
+      }, 5000);
     }
   </script>
 </body>
