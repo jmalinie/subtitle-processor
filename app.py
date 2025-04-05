@@ -25,27 +25,33 @@ def kv_get(key, namespace_id):
 def background_task(job_id, video_id, url, target_lang):
     try:
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
-
         if not namespace_id:
             jobs[job_id] = {"status": "error", "message": "Varsayılan KV namespace tanımlı değil!"}
             return
 
         kv_key = f"en:{video_id}:{target_lang}"
 
- #       if kv_get(kv_key, namespace_id):
- #          jobs[job_id] = {
- #              "status": "completed",
- #           "video_id": video_id,
- #             "original_json": f"en/original/{video_id}.json",
- #               "original_txt": f"en/original/{video_id}.txt",
- #              "translated_json": f"en/translated/{target_lang}/{video_id}.json",
- #               "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
- #         }
- #         return
+        # KV kontrolü yap
+        if kv_get(kv_key, namespace_id):
+            jobs[job_id] = {
+                "status": "completed",
+                "video_id": video_id,
+                "original_json": f"en/original/{video_id}.json",
+                "original_txt": f"en/original/{video_id}.txt",
+                "translated_json": f"en/translated/{target_lang}/{video_id}.json",
+                "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
+            }
+            return
 
+        # İlk işlem
         process_subtitles(url, target_lang)
 
-        translate_and_upload(video_id, "en", target_lang, namespace_id)
+        # Çeviri fonksiyonuna geçiş ve hata yakalama
+        try:
+            translate_and_upload(video_id, "en", target_lang, namespace_id)
+        except Exception as ceviri_hatasi:
+            jobs[job_id] = {"status": "error", "message": f"Çeviri hatası: {str(ceviri_hatasi)}"}
+            return
 
         jobs[job_id] = {
             "status": "completed",
@@ -57,7 +63,7 @@ def background_task(job_id, video_id, url, target_lang):
         }
 
     except Exception as e:
-        jobs[job_id] = {"status": "error", "message": f"Backend hata: {str(e)}"}
+        jobs[job_id] = {"status": "error", "message": f"Backend hata (genel): {str(e)}"}
 
 @app.route("/")
 def index():
