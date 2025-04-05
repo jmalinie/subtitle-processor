@@ -1,18 +1,15 @@
 import os
 
 def get_kv_namespace_id_for_english_original(video_id):
-    if not video_id:
-        raise ValueError("Boş video ID gönderildi!")
+    first_char = video_id[0].upper()
+    env_var_name = f"KV_EN_ORIGINAL_{first_char}"
+    
+    # Debug için log ekleyelim
+    print(f"🛠️ DEBUG: Env var aranıyor: {env_var_name}")
+    namespace_id = os.getenv(env_var_name)
+    print(f"🛠️ DEBUG: Bulunan namespace_id: {namespace_id}")
 
-    first_char = video_id[0].lower()
-
-    if first_char.isalnum():
-        env_var_name = f"KV_EN_ORIGINAL_{first_char.upper()}"
-        namespace_id = os.getenv(env_var_name)
-
-        if namespace_id:
-            return namespace_id
-        else:
-            raise KeyError(f"{env_var_name} bulunamadı! Ortam değişkenlerini kontrol edin.")
+    if namespace_id:
+        return namespace_id
     else:
-        raise ValueError(f"Geçersiz karakter: {first_char}")
+        raise KeyError(f"{env_var_name} tanımlı değil veya okunamadı!")
