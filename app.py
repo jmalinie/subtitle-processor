@@ -28,6 +28,7 @@ def background_task(job_id, video_id, url, target_lang):
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
         kv_key = f"en:{video_id}:{target_lang}"
 
+        # KV kontrolü yap
         if kv_get(kv_key, namespace_id):
             jobs[job_id] = {
                 "status": "completed",
@@ -39,6 +40,7 @@ def background_task(job_id, video_id, url, target_lang):
             }
             return
 
+        # KV'de yoksa işlemleri yap
         process_subtitles(url, target_lang)
         translate_and_upload(video_id, "en", target_lang)
 

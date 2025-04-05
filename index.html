@@ -6,7 +6,6 @@
   <style>
     body { font-family: Arial; padding: 20px; }
     #result { margin-top: 20px; white-space: pre-line; font-weight: bold; }
-    a { text-decoration: none; color: #0366d6; }
   </style>
 </head>
 <body>
@@ -44,47 +43,35 @@
 
         const data = await response.json();
 
-        if (data.status !== "ok") {
-          resultDiv.textContent = "❌ İşlem başlatılamadı: " + (data.message || "Bilinmeyen hata.");
-          return;
-        }
+        if (response.status === 202 && data.status === "ok") {
+          const checkStatus = setInterval(async () => {
+            const statusResponse = await fetch(`https://api.elosito.com/status/${data.job_id}`);
+            const statusData = await statusResponse.json();
 
-        checkStatusPeriodically(data.job_id);
+            if (statusData.status === "completed") {
+              clearInterval(checkStatus);
+              resultDiv.innerHTML = `
+                🎉 İşlem Tamamlandı!<br><br>
+                🔹 <b>Orijinal Altyazılar:</b><br>
+                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_json}" target="_blank">JSON İndir</a><br>
+                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_txt}" target="_blank">TXT İndir</a><br><br>
+                🔹 <b>Çeviri Altyazılar:</b><br>
+                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_json}" target="_blank">JSON İndir</a><br>
+                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_txt}" target="_blank">TXT İndir</a>`;
+            } else if (statusData.status === "error") {
+              clearInterval(checkStatus);
+              resultDiv.textContent = "❌ Hata: " + statusData.message;
+            } else {
+              resultDiv.textContent = "🌍 İşleniyor, lütfen bekleyin...";
+            }
+          }, 5000);
+        } else {
+          resultDiv.textContent = "❌ İşlem başlatılamadı: " + data.message;
+        }
       } catch (err) {
         console.error(err);
         resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
       }
-    }
-
-    function checkStatusPeriodically(jobId) {
-      const resultDiv = document.getElementById("result");
-      const interval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`https://api.elosito.com/status/${jobId}`);
-          const statusData = await statusResponse.json();
-
-          if (statusData.status === "completed") {
-            clearInterval(interval);
-            resultDiv.innerHTML = `
-              🎉 İşlem Tamamlandı!<br><br>
-              🔹 <strong>Orijinal Altyazılar:</strong><br>
-              - <a href="https://pub-3a845b8c6a1002fc90d1a644fa0d49ab.r2.dev/${statusData.original_json}" target="_blank">📄 JSON İndir</a><br>
-              - <a href="https://pub-3a845b8c6a1002fc90d1a644fa0d49ab.r2.dev/${statusData.original_txt}" target="_blank">📄 TXT İndir</a><br><br>
-              🔹 <strong>Çevrilmiş Altyazılar:</strong><br>
-              - <a href="https://pub-3a845b8c6a1002fc90d1a644fa0d49ab.r2.dev/${statusData.translated_json}" target="_blank">🌍 JSON İndir</a><br>
-              - <a href="https://pub-3a845b8c6a1002fc90d1a644fa0d49ab.r2.dev/${statusData.translated_txt}" target="_blank">🌍 TXT İndir</a>`;
-          } else if (statusData.status === "error") {
-            clearInterval(interval);
-            resultDiv.textContent = "❌ Hata: " + statusData.message;
-          } else {
-            resultDiv.textContent = "⏳ İşleniyor, lütfen bekleyin...";
-          }
-        } catch (err) {
-          clearInterval(interval);
-          console.error(err);
-          resultDiv.textContent = "❌ Durum sorgulanırken hata oluştu.";
-        }
-      }, 5000);
     }
   </script>
 </body>
