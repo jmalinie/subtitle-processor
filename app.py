@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from processor import process_subtitles
 from translator import translate_subtitles as translate_and_upload
-from kv_namespace_resolver import get_kv_namespace_for_video
+from kv_namespace_resolver import get_kv_namespace_id_for_english_original
 from threading import Thread
 import uuid
 import os
@@ -13,28 +13,22 @@ CORS(app, origins=["https://elosito.com"])
 
 jobs = {}
 
+# KV bilgilerini .env'den al
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
 
-def kv_get(video_id, target_lang):
-    first_char = video_id[0].lower()
-    namespace_id = get_kv_namespace_for_video(first_char)
-    if not namespace_id:
-        return None
-
-    key = f"en:{video_id}:{target_lang}"
+def kv_get(key, namespace_id):
     url = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/{namespace_id}/values/{key}"
     headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"}
     response = requests.get(url, headers=headers)
     return response.text if response.status_code == 200 else None
 
-@app.route("/")
-def index():
-    return send_from_directory(".", "index.html")
-
 def background_task(job_id, video_id, url, target_lang):
     try:
-        if kv_get(video_id, target_lang):
+        namespace_id = get_kv_namespace_id_for_english_original(video_id)
+        kv_key = f"en:{video_id}:{target_lang}"
+
+        if kv_get(kv_key, namespace_id):
             jobs[job_id] = {
                 "status": "completed",
                 "video_id": video_id,
@@ -59,6 +53,10 @@ def background_task(job_id, video_id, url, target_lang):
 
     except Exception as e:
         jobs[job_id] = {"status": "error", "message": str(e)}
+
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
 
 @app.route("/process", methods=["POST"])
 def process():
