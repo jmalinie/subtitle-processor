@@ -65,7 +65,7 @@ def translate_subtitles(video_id, source_lang, target_lang):
     upload_to_r2(txt_path, txt_key)
 
     # 🔑 Hangi namespace'e yazılacağını belirle
-    namespace_id = get_kv_namespace_id_for_english_original(video_id)
+    namespace_id = get_kv_namespace_for_video(video_id)
     kv_key = f"{source_lang}:{video_id}:{target_lang}"
     kv_value = {
         "json": json_key,
