@@ -17,11 +17,10 @@ def translate_text(text, source_lang, target_lang):
     )
     return response.choices[0].message.content.strip()
 
-def translate_subtitles(video_id, source_lang, target_lang):
+def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
     original_json_path = f"downloads/{video_id}_{source_lang}.json"
     if not os.path.exists(original_json_path):
-        print(f"❌ JSON bulunamadı: {original_json_path}")
-        return
+        raise Exception(f"JSON bulunamadı: {original_json_path}")
 
     with open(original_json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -64,7 +63,6 @@ def translate_subtitles(video_id, source_lang, target_lang):
     upload_to_r2(json_path, json_key)
     upload_to_r2(txt_path, txt_key)
 
-    namespace_id = get_kv_namespace_id_for_english_original(video_id)
     kv_key = f"{source_lang}:{video_id}:{target_lang}"
     kv_value = {
         "json": json_key,
@@ -73,3 +71,4 @@ def translate_subtitles(video_id, source_lang, target_lang):
     write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
 
     print("🎉 Çeviri işlemi tamamlandı!")
+

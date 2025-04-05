@@ -27,7 +27,7 @@ def background_task(job_id, video_id, url, target_lang):
     try:
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
         if not namespace_id:
-            jobs[job_id] = {"status": "error", "message": "KV namespace bulunamadı!"}
+            jobs[job_id] = {"status": "error", "message": "Varsayılan KV namespace tanımlı değil!"}
             return
 
         kv_key = f"en:{video_id}:{target_lang}"
@@ -44,25 +44,22 @@ def background_task(job_id, video_id, url, target_lang):
             return
 
         process_subtitles(url, target_lang)
-        
-        # Çeviri işlemini yap ve hata kontrolü ekle
-        translate_and_upload(video_id, "en", target_lang)
 
-        translated_json_path = f"en/translated/{target_lang}/{video_id}.json"
-        translated_txt_path = f"en/translated/{target_lang}/{video_id}.txt"
+        # 🔥 Dikkat: Burada namespace_id'yi doğrudan ver!
+        translate_and_upload(video_id, "en", target_lang, namespace_id)
 
-        # Dosyalar gerçekten R2'ye yüklendi mi kontrol edelim (opsiyonel ama önerilir!)
         jobs[job_id] = {
             "status": "completed",
             "video_id": video_id,
             "original_json": f"en/original/{video_id}.json",
             "original_txt": f"en/original/{video_id}.txt",
-            "translated_json": translated_json_path,
-            "translated_txt": translated_txt_path
+            "translated_json": f"en/translated/{target_lang}/{video_id}.json",
+            "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
         }
 
     except Exception as e:
         jobs[job_id] = {"status": "error", "message": f"Backend hata: {str(e)}"}
+
 
 @app.route("/")
 def index():
