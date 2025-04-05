@@ -25,29 +25,35 @@ def kv_get(key, namespace_id):
 def background_task(job_id, video_id, url, target_lang):
     try:
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
-        kv_key = f"en:{video_id.lower()}:{target_lang}"
+
+        if not namespace_id:
+            jobs[job_id] = {"status": "error", "message": "Varsayılan KV namespace tanımlı değil!"}
+            return
+
+        kv_key = f"en:{video_id}:{target_lang}"
 
         if kv_get(kv_key, namespace_id):
             jobs[job_id] = {
                 "status": "completed",
-                "video_id": video_id.lower(),
-                "original_json": f"en/original/{video_id.lower()}.json",
-                "original_txt": f"en/original/{video_id.lower()}.txt",
-                "translated_json": f"en/translated/{target_lang}/{video_id.lower()}.json",
-                "translated_txt": f"en/translated/{target_lang}/{video_id.lower()}.txt"
+                "video_id": video_id,
+                "original_json": f"en/original/{video_id}.json",
+                "original_txt": f"en/original/{video_id}.txt",
+                "translated_json": f"en/translated/{target_lang}/{video_id}.json",
+                "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
             }
             return
 
         process_subtitles(url, target_lang)
+
         translate_and_upload(video_id, "en", target_lang, namespace_id)
 
         jobs[job_id] = {
             "status": "completed",
-            "video_id": video_id.lower(),
-            "original_json": f"en/original/{video_id.lower()}.json",
-            "original_txt": f"en/original/{video_id.lower()}.txt",
-            "translated_json": f"en/translated/{target_lang}/{video_id.lower()}.json",
-            "translated_txt": f"en/translated/{target_lang}/{video_id.lower()}.txt"
+            "video_id": video_id,
+            "original_json": f"en/original/{video_id}.json",
+            "original_txt": f"en/original/{video_id}.txt",
+            "translated_json": f"en/translated/{target_lang}/{video_id}.json",
+            "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
         }
 
     except Exception as e:
