@@ -26,9 +26,12 @@ def kv_get(key, namespace_id):
 def background_task(job_id, video_id, url, target_lang):
     try:
         namespace_id = get_kv_namespace_id_for_english_original(video_id)
+        if not namespace_id:
+            jobs[job_id] = {"status": "error", "message": "KV namespace bulunamadı!"}
+            return
+
         kv_key = f"en:{video_id}:{target_lang}"
 
-        # KV kontrolü yap
         if kv_get(kv_key, namespace_id):
             jobs[job_id] = {
                 "status": "completed",
@@ -40,21 +43,26 @@ def background_task(job_id, video_id, url, target_lang):
             }
             return
 
-        # KV'de yoksa işlemleri yap
         process_subtitles(url, target_lang)
+        
+        # Çeviri işlemini yap ve hata kontrolü ekle
         translate_and_upload(video_id, "en", target_lang)
 
+        translated_json_path = f"en/translated/{target_lang}/{video_id}.json"
+        translated_txt_path = f"en/translated/{target_lang}/{video_id}.txt"
+
+        # Dosyalar gerçekten R2'ye yüklendi mi kontrol edelim (opsiyonel ama önerilir!)
         jobs[job_id] = {
             "status": "completed",
             "video_id": video_id,
             "original_json": f"en/original/{video_id}.json",
             "original_txt": f"en/original/{video_id}.txt",
-            "translated_json": f"en/translated/{target_lang}/{video_id}.json",
-            "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
+            "translated_json": translated_json_path,
+            "translated_txt": translated_txt_path
         }
 
     except Exception as e:
-        jobs[job_id] = {"status": "error", "message": str(e)}
+        jobs[job_id] = {"status": "error", "message": f"Backend hata: {str(e)}"}
 
 @app.route("/")
 def index():

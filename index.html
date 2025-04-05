@@ -6,6 +6,7 @@
   <style>
     body { font-family: Arial; padding: 20px; }
     #result { margin-top: 20px; white-space: pre-line; font-weight: bold; }
+    #version { font-size: 12px; color: #888; margin-top: 30px; }
   </style>
 </head>
 <body>
@@ -21,58 +22,66 @@
 
   <div id="result"></div>
 
+  <div id="version">Versiyon: 1.1.3</div>
+
   <script>
-    async function sendRequest() {
-      const url = document.getElementById("url").value.trim();
-      const targetLang = document.getElementById("target_lang").value.trim();
-      const resultDiv = document.getElementById("result");
+   async function sendRequest() {
+  const url = document.getElementById("url").value.trim();
+  const targetLang = document.getElementById("target_lang").value.trim();
+  const resultDiv = document.getElementById("result");
 
-      if (!url || !targetLang) {
-        resultDiv.textContent = "❗ YouTube URL ve hedef dil giriniz.";
-        return;
-      }
+  if (!url || !targetLang) {
+    resultDiv.textContent = "❗ YouTube URL ve hedef dil giriniz.";
+    return;
+  }
 
-      resultDiv.textContent = "🔍 Altyazı aranıyor, lütfen bekleyin...";
+  resultDiv.textContent = "🔍 Altyazı aranıyor, lütfen bekleyin...";
 
-      try {
-        const response = await fetch("https://api.elosito.com/process", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, target_lang: targetLang })
-        });
+  try {
+    const response = await fetch("https://api.elosito.com/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, target_lang: targetLang })
+    });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        if (response.status === 202 && data.status === "ok") {
-          const checkStatus = setInterval(async () => {
-            const statusResponse = await fetch(`https://api.elosito.com/status/${data.job_id}`);
-            const statusData = await statusResponse.json();
+    if (response.status === 202 && data.status === "ok") {
+      const checkStatus = setInterval(async () => {
+        const statusResponse = await fetch(`https://api.elosito.com/status/${data.job_id}`);
+        const statusData = await statusResponse.json();
 
-            if (statusData.status === "completed") {
-              clearInterval(checkStatus);
-              resultDiv.innerHTML = `
-                🎉 İşlem Tamamlandı!<br><br>
-                🔹 <b>Orijinal Altyazılar:</b><br>
-                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_json}" target="_blank">JSON İndir</a><br>
-                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_txt}" target="_blank">TXT İndir</a><br><br>
-                🔹 <b>Çeviri Altyazılar:</b><br>
-                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_json}" target="_blank">JSON İndir</a><br>
-                - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_txt}" target="_blank">TXT İndir</a>`;
-            } else if (statusData.status === "error") {
-              clearInterval(checkStatus);
-              resultDiv.textContent = "❌ Hata: " + statusData.message;
-            } else {
-              resultDiv.textContent = "🌍 İşleniyor, lütfen bekleyin...";
-            }
-          }, 5000);
+        if (statusData.status === "completed") {
+          clearInterval(checkStatus);
+          if (statusData.translated_json && statusData.translated_txt) {
+            resultDiv.innerHTML = `
+              🎉 İşlem Tamamlandı!<br>
+              🔹 Orijinal:
+              - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_json}" target="_blank">JSON İndir</a>
+              - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.original_txt}" target="_blank">TXT İndir</a><br>
+              🔹 Çeviri:
+              - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_json}" target="_blank">JSON İndir</a>
+              - <a href="https://3a845b8c6a1002fc90d1a644fa0d49ab.r2.cloudflarestorage.com/elositocom/${statusData.translated_txt}" target="_blank">TXT İndir</a>`;
+          } else {
+            resultDiv.textContent = "❌ Çeviri dosyaları bulunamadı veya yüklenmedi!";
+          }
+        } else if (statusData.status === "error") {
+          clearInterval(checkStatus);
+          resultDiv.textContent = "❌ Backend hata: " + statusData.message;
         } else {
-          resultDiv.textContent = "❌ İşlem başlatılamadı: " + data.message;
+          resultDiv.textContent = "🌍 İşleniyor, lütfen bekleyin...";
         }
-      } catch (err) {
-        console.error(err);
-        resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
-      }
+      }, 5000);
+    } else {
+      resultDiv.textContent = "❌ İşlem başlatılamadı: " + data.message;
     }
+  } catch (err) {
+    console.error(err);
+    resultDiv.textContent = "❌ Ağ hatası veya sunucu yanıt vermedi.";
+  }
+}
+
+
   </script>
 </body>
 </html>
