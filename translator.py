@@ -68,7 +68,9 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
         "json": json_key,
         "txt": txt_key
     }
+    # namespace_id'yi burada kullanıyoruz
     write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
 
     print("🎉 Çeviri işlemi tamamlandı!")
+
 
