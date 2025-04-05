@@ -1,16 +1,19 @@
 import os
 
 def get_kv_namespace_id_for_english_original(video_id):
-    first_char = video_id[0].upper()
-    env_var_name = f"KV_EN_ORIGINAL_{first_char}"
-    namespace_id = os.getenv(env_var_name)
-    if namespace_id:
-        return namespace_id
-    else:
-        # Küçük harf fallback ekleyelim
-        env_var_name_lower = f"KV_EN_ORIGINAL_{first_char.lower()}"
-        namespace_id = os.getenv(env_var_name_lower)
-        if namespace_id:
-            return namespace_id
-        raise Exception(f"KV namespace tanımlı değil: {env_var_name} veya {env_var_name_lower}")
+    first_char_upper = video_id[0].upper()
+    first_char_lower = video_id[0].lower()
+
+    namespace_upper = os.getenv(f"KV_EN_ORIGINAL_{first_char_upper}")
+    namespace_lower = os.getenv(f"KV_EN_ORIGINAL_{first_char_lower}")
+
+    print(f"🔍 DEBUG UPPER ({first_char_upper}): {namespace_upper}")
+    print(f"🔍 DEBUG LOWER ({first_char_lower}): {namespace_lower}")
+
+    if namespace_upper:
+        return namespace_upper
+    if namespace_lower:
+        return namespace_lower
+
+    raise Exception(f"KV namespace tanımlı değil: KV_EN_ORIGINAL_{first_char_upper} veya KV_EN_ORIGINAL_{first_char_lower}")
 
