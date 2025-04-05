@@ -13,3 +13,4 @@ def get_kv_namespace_id_for_english_original(video_id):
         if namespace_id:
             return namespace_id
         raise Exception(f"KV namespace tanımlı değil: {env_var_name} veya {env_var_name_lower}")
+
