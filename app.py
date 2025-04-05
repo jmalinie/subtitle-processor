@@ -32,16 +32,16 @@ def background_task(job_id, video_id, url, target_lang):
 
         kv_key = f"en:{video_id}:{target_lang}"
 
-        if kv_get(kv_key, namespace_id):
-            jobs[job_id] = {
-                "status": "completed",
-                "video_id": video_id,
-                "original_json": f"en/original/{video_id}.json",
-                "original_txt": f"en/original/{video_id}.txt",
-                "translated_json": f"en/translated/{target_lang}/{video_id}.json",
-                "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
-            }
-            return
+ #       if kv_get(kv_key, namespace_id):
+ #          jobs[job_id] = {
+ #              "status": "completed",
+ #           "video_id": video_id,
+ #             "original_json": f"en/original/{video_id}.json",
+ #               "original_txt": f"en/original/{video_id}.txt",
+ #              "translated_json": f"en/translated/{target_lang}/{video_id}.json",
+ #               "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
+ #         }
+ #         return
 
         process_subtitles(url, target_lang)
 
