@@ -1,18 +1,20 @@
 import os
 
-def get_kv_namespace_id_for_english_original(video_id):
+def get_namespace_id(source_lang, video_id):
+    popular_langs = {'en', 'es', 'de', 'fr', 'ru', 'zh'}
+    special_langs = {'ja', 'ko', 'ar', 'pt', 'it', 'hi', 'tr', 'nl', 'sv', 'el', 'pl', 'vi', 'th', 'id'}
+
     first_char = video_id[0].upper()
 
-    # Eğer ilk karakter alfanumerik değilse "DEFAULT" kullan.
-    if not first_char.isalnum():
-        first_char = "DEFAULT"
-
-    env_var_name_upper = f"KV_EN_ORIGINAL_{first_char.upper()}"
-    env_var_name_lower = f"KV_EN_ORIGINAL_{first_char.lower()}"
-
-    namespace_id = os.getenv(env_var_name_upper) or os.getenv(env_var_name_lower)
-
-    if namespace_id:
-        return namespace_id
+    if source_lang in popular_langs:
+        env_name = f"KV_{source_lang.upper()}_ORIGINAL_{first_char}"
+    elif source_lang in special_langs:
+        env_name = f"KV_{source_lang.upper()}_ORIGINAL"
     else:
-        raise Exception(f"KV namespace tanımlı değil: {env_var_name_upper} veya {env_var_name_lower}")
+        env_name = "KV_OTHER_LANGS_ORIGINAL"
+
+    namespace_id = os.getenv(env_name)
+    if not namespace_id:
+        raise Exception(f"Namespace tanımlı değil: {env_name}")
+    return namespace_id
+

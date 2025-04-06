@@ -1,69 +1,22 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from processor import process_subtitles
-from translator import translate_subtitles as translate_and_upload
-from kv_namespace_resolver import get_kv_namespace_id_for_english_original
+from translator import translate_subtitles
 from threading import Thread
 import uuid
-import os
-import requests
 
 app = Flask(__name__)
 CORS(app, origins=["https://elosito.com"])
 
 jobs = {}
 
-CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
-CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
-
-def kv_get(key, namespace_id):
-    url = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/{namespace_id}/values/{key}"
-    headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}"}
-    response = requests.get(url, headers=headers)
-    return response.text if response.status_code == 200 else None
-
-def background_task(job_id, video_id, url, target_lang):
+def background_task(job_id, video_id, url, source_lang, target_lang):
     try:
-        namespace_id = get_kv_namespace_id_for_english_original(video_id)
-        if not namespace_id:
-            jobs[job_id] = {"status": "error", "message": "Varsayılan KV namespace tanımlı değil!"}
-            return
-
-        kv_key = f"en:{video_id}:{target_lang}"
-
-        # KV kontrolü yap
-        if kv_get(kv_key, namespace_id):
-            jobs[job_id] = {
-                "status": "completed",
-                "video_id": video_id,
-                "original_json": f"en/original/{video_id}.json",
-                "original_txt": f"en/original/{video_id}.txt",
-                "translated_json": f"en/translated/{target_lang}/{video_id}.json",
-                "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
-            }
-            return
-
-        # İlk işlem
-        process_subtitles(url, target_lang)
-
-        # Çeviri fonksiyonuna geçiş ve hata yakalama
-        try:
-            translate_and_upload(video_id, "en", target_lang, namespace_id)
-        except Exception as ceviri_hatasi:
-            jobs[job_id] = {"status": "error", "message": f"Çeviri hatası: {str(ceviri_hatasi)}"}
-            return
-
-        jobs[job_id] = {
-            "status": "completed",
-            "video_id": video_id,
-            "original_json": f"en/original/{video_id}.json",
-            "original_txt": f"en/original/{video_id}.txt",
-            "translated_json": f"en/translated/{target_lang}/{video_id}.json",
-            "translated_txt": f"en/translated/{target_lang}/{video_id}.txt"
-        }
-
+        process_subtitles(url, source_lang)
+        translate_subtitles(video_id, source_lang, target_lang)
+        jobs[job_id] = {"status": "completed"}
     except Exception as e:
-        jobs[job_id] = {"status": "error", "message": f"Backend hata (genel): {str(e)}"}
+        jobs[job_id] = {"status": "error", "message": str(e)}
 
 @app.route("/")
 def index():
@@ -73,6 +26,7 @@ def index():
 def process():
     data = request.get_json()
     url = data.get("url")
+    source_lang = data.get("source_lang", "en")
     target_lang = data.get("target_lang")
 
     if not url or not target_lang:
@@ -82,17 +36,13 @@ def process():
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "processing"}
 
-    thread = Thread(target=background_task, args=(job_id, video_id, url, target_lang))
-    thread.start()
+    Thread(target=background_task, args=(job_id, video_id, url, source_lang, target_lang)).start()
 
     return jsonify({"status": "ok", "job_id": job_id}), 202
 
 @app.route("/status/<job_id>", methods=["GET"])
 def check_status(job_id):
-    job = jobs.get(job_id)
-    if not job:
-        return jsonify({"status": "error", "message": "Geçersiz iş ID."}), 404
-    return jsonify(job)
+    return jsonify(jobs.get(job_id, {"status": "error", "message": "Geçersiz iş ID."}))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)

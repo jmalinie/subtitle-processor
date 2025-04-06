@@ -4,11 +4,12 @@ from openai import OpenAI
 from config import OPENAI_API_KEY
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv
+from kv_namespace_resolver import get_namespace_id
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def translate_text(text, source_lang, target_lang):
-    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text}\n\nJust plain translate, do not comment."
+    prompt = f"Translate the following subtitle from {source_lang} to {target_lang}:\n\n{text}\nJust translate, do not comment."
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
@@ -16,7 +17,8 @@ def translate_text(text, source_lang, target_lang):
     )
     return response.choices[0].message.content.strip()
 
-def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
+def translate_subtitles(video_id, source_lang, target_lang):
+    first_char = video_id[0].upper()
     original_json_path = f"downloads/{video_id}_{source_lang}.json"
     if not os.path.exists(original_json_path):
         raise Exception(f"JSON bulunamadı: {original_json_path}")
@@ -37,7 +39,6 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
 
     translated_data = {
         "language": target_lang,
-        "language_code": target_lang,
         "translated_from": source_lang,
         "video_id": video_id,
         "snippets": translated_snippets
@@ -55,25 +56,14 @@ def translate_subtitles(video_id, source_lang, target_lang, namespace_id):
         for item in translated_snippets:
             tf.write(item["text"] + "\n")
 
-    print(f"✅ Çeviri dosyaları oluşturuldu: {json_path}, {txt_path}")
+    json_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.json"
+    txt_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.txt"
 
-    json_key = f"{source_lang}/translated/{target_lang}/{video_id}.json"
-    txt_key = f"{source_lang}/translated/{target_lang}/{video_id}.txt"
     upload_to_r2(json_path, json_key)
     upload_to_r2(txt_path, txt_key)
 
     kv_key = f"{source_lang}:{video_id}:{target_lang}"
-    kv_value = {
-        "json": json_key,
-        "txt": txt_key
-    }
+    kv_value = {"json": json_key, "txt": txt_key}
 
-    # KV yazma işlemini hataya karşı koruyoruz ve logluyoruz:
-    try:
-        write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
-        print(f"✅ KV'ye yazıldı: {kv_key}")
-    except Exception as e:
-        print(f"🚨 KV Yazma hatası ({kv_key}): {str(e)}")
-        raise e
-
-    print("🎉 Çeviri işlemi tamamlandı!")
+    namespace_id = get_namespace_id(source_lang, video_id)
+    write_to_kv(kv_key, kv_value, namespace_id=namespace_id)
