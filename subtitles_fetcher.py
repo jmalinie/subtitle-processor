@@ -1,4 +1,4 @@
-import json
+import json 
 from youtube_transcript_api import YouTubeTranscriptApi
 
 def fetch_subtitles(video_id):
@@ -6,11 +6,11 @@ def fetch_subtitles(video_id):
     transcript = transcript_list.find_transcript(['en', 'es', 'de', 'fr', 'ru', 'zh', 'ja', 'ko', 'ar', 'pt', 'it', 'hi', 'tr', 'nl', 'sv', 'el', 'pl', 'vi', 'th', 'id'])
 
     subtitle_lang = transcript.language_code
-    subtitle_data = transcript.fetch()  # JSON serialize edilebilir format budur.
+    subtitle_data = transcript.fetch()  # Burası zaten dict tipinde subtitle verisi döner.
 
     response_json = {
         "language_code": subtitle_lang,
-        "subtitles": subtitle_data
+        "subtitles": subtitle_data  # subtitle_data zaten JSON serializable'dır
     }
 
     json_path = f"downloads/{video_id}_{subtitle_lang}.json"
