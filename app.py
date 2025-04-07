@@ -10,11 +10,18 @@ CORS(app, origins=["https://elosito.com"])
 
 jobs = {}
 
-def background_task(job_id, video_id, url, source_lang, target_lang):
+def background_task(job_id, video_id, url, target_lang):
     try:
-        process_subtitles(url, source_lang)
-        translate_subtitles(video_id, source_lang, target_lang)
-        jobs[job_id] = {"status": "completed", "video_id": video_id}
+        video_id, subtitle_lang = process_subtitles(url, target_lang)
+        
+        if subtitle_lang != target_lang:
+            translate_subtitles(video_id, subtitle_lang, target_lang)
+        
+        jobs[job_id] = {
+            "status": "completed",
+            "subtitle_lang": subtitle_lang,
+            "video_id": video_id
+        }
     except Exception as e:
         jobs[job_id] = {"status": "error", "message": str(e)}
 
@@ -26,7 +33,6 @@ def index():
 def process():
     data = request.get_json()
     url = data.get("url")
-    source_lang = data.get("source_lang", "en")
     target_lang = data.get("target_lang")
 
     if not url or not target_lang:
@@ -36,7 +42,7 @@ def process():
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "processing"}
 
-    Thread(target=background_task, args=(job_id, video_id, url, source_lang, target_lang)).start()
+    Thread(target=background_task, args=(job_id, video_id, url, target_lang)).start()
 
     return jsonify({"status": "ok", "job_id": job_id}), 202
 

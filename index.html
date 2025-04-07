@@ -49,19 +49,20 @@
             const statusData = await statusResponse.json();
 
             if (statusData.status === "completed") {
-              clearInterval(checkStatus);
+    clearInterval(checkStatus);
+    const subtitleLang = statusData.subtitle_lang;
+    const videoId = statusData.video_id;
+    const firstChar = videoId[0].toUpperCase();
 
-              const firstChar = statusData.video_id[0].toLowerCase();
-
-              resultDiv.innerHTML = `
-                🎉 İşlem Tamamlandı!<br>
-                🔹 Orijinal:
-                - <a href="https://elosito.com/en/original/${firstChar}/${statusData.video_id}.json" target="_blank">JSON İndir</a>
-                - <a href="https://elosito.com/en/original/${firstChar}/${statusData.video_id}.txt" target="_blank">TXT İndir</a><br>
-                🔹 Çeviri:
-                - <a href="https://elosito.com/en/translated/${targetLang}/${firstChar}/${statusData.video_id}.json" target="_blank">JSON İndir</a>
-                - <a href="https://elosito.com/en/translated/${targetLang}/${firstChar}/${statusData.video_id}.txt" target="_blank">TXT İndir</a>`;
-            } else if (statusData.status === "error") {
+    resultDiv.innerHTML = `
+    🎉 İşlem Tamamlandı!<br>
+    📌 Orijinal (${subtitleLang}):
+    - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.json">JSON İndir</a>
+    - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.txt">TXT İndir</a><br>
+    📌 Çeviri (${targetLang}):
+    - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.json">JSON İndir</a>
+    - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.txt">TXT İndir</a>`;
+} else if (statusData.status === "error") {
               clearInterval(checkStatus);
               resultDiv.textContent = "❌ Hata: " + statusData.message;
             } else {
