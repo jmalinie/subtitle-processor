@@ -13,21 +13,11 @@ jobs = {}
 
 def background_task(job_id, video_id, subtitle_lang, target_lang, url):
     try:
-        # Altyazıları işle (subtitle_lang otomatik olarak belirleniyor)
-        subtitle_lang = process_subtitles(url, target_lang)
-        # Altyazıları çevir
+        video_id, subtitle_lang = process_subtitles(url, target_lang)
         translate_subtitles(video_id, subtitle_lang, target_lang)
-        
-        jobs[job_id] = {
-            "status": "completed",
-            "video_id": video_id,
-            "subtitle_lang": subtitle_lang
-        }
+        jobs[job_id] = {"status": "completed", "video_id": video_id, "subtitle_lang": subtitle_lang}
     except Exception as e:
-        jobs[job_id] = {
-            "status": "error",
-            "message": str(e)
-        }
+        jobs[job_id] = {"status": "error", "message": str(e)}
 
 @app.route("/")
 def index():

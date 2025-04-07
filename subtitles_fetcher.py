@@ -6,9 +6,7 @@ def fetch_subtitles(video_id):
     transcript = transcript_list.find_transcript(['en', 'es', 'de', 'fr', 'ru', 'zh', 'ja', 'ko', 'ar', 'pt', 'it', 'hi', 'tr', 'nl', 'sv', 'el', 'pl', 'vi', 'th', 'id'])
 
     subtitle_lang = transcript.language_code
-
-    # Burada .fetch() ile JSON'a dönüşebilecek veriyi alıyoruz
-    subtitle_data = transcript.fetch()
+    subtitle_data = transcript.fetch()  # JSON serialize edilebilir format budur.
 
     response_json = {
         "language_code": subtitle_lang,
