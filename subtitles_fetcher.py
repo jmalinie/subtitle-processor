@@ -10,8 +10,8 @@ def fetch_subtitles(video_id):
 
     response_json = {
         "language_code": subtitle_lang,
-        "subtitles": [  # burayı düzeltiyoruz
-            {"text": entry["text"], "start": entry["start"], "duration": entry["duration"]}
+        "subtitles": [
+            {"text": entry.text, "start": entry.start, "duration": entry.duration}
             for entry in subtitle_data
         ]
     }
@@ -24,6 +24,6 @@ def fetch_subtitles(video_id):
 
     with open(txt_path, 'w', encoding='utf-8') as f:
         for entry in subtitle_data:
-            f.write(entry["text"] + '\n')
+            f.write(entry.text + '\n')
 
     return json_path, txt_path, subtitle_lang
