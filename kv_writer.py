@@ -2,18 +2,21 @@ import requests
 import os
 import json
 
-CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
-CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
-
 def write_to_kv(key, value, namespace_id):
-    url = f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/{namespace_id}/values/{key}"
     headers = {
-        "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+        "Authorization": f"Bearer {os.getenv('CLOUDFLARE_API_TOKEN')}",
         "Content-Type": "application/json"
     }
+    url = f"https://api.cloudflare.com/client/v4/accounts/{os.getenv('CLOUDFLARE_ACCOUNT_ID')}/storage/kv/namespaces/{namespace_id}/values/{key}"
     response = requests.put(url, headers=headers, data=json.dumps(value))
-    
-    if response.status_code == 200:
-        print(f"✅ KV’ye yazıldı: {key}")
-    else:
-        raise Exception(f"❌ KV'ye yazılamadı ({response.status_code}): {response.text}")
+    if response.status_code != 200:
+        raise Exception(f"KV'ye yazma başarısız oldu: {response.text}")
+    print(f"✅ KV'ye yazıldı: {key}")
+
+def check_kv_exists(key, namespace_id):
+    headers = {
+        "Authorization": f"Bearer {os.getenv('CLOUDFLARE_API_TOKEN')}"
+    }
+    url = f"https://api.cloudflare.com/client/v4/accounts/{os.getenv('CLOUDFLARE_ACCOUNT_ID')}/storage/kv/namespaces/{namespace_id}/values/{key}"
+    response = requests.get(url, headers=headers)
+    return response.status_code == 200

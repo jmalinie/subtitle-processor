@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Altyazı Çevirici v1.2</title>
+</head>
+<body>
+    <h2>🎬 YouTube Altyazı Çevirici v1.2</h2>
+
+    <label for="youtubeURL">YouTube URL:</label><br>
+    <input type="text" id="youtubeURL" style="width:400px;" placeholder="https://www.youtube.com/watch?v=..."><br><br>
+
+    <label for="targetLang">Hedef Dil (örnek: tr, es, de):</label><br>
+    <input type="text" id="targetLang" value="tr"><br><br>
+
+    <button onclick="startProcessing()">Çevir</button>
+
+    <div id="result"></div>
+
+    <script>
+        function startProcessing() {
+            const url = document.getElementById('youtubeURL').value;
+            const targetLang = document.getElementById('targetLang').value;
+
+            if (!url || !targetLang) {
+                alert('Lütfen YouTube URL ve hedef dili girin.');
+                return;
+            }
+
+            document.getElementById('result').innerHTML = "🌐 İşleniyor, lütfen bekleyin...";
+
+            fetch('https://api.elosito.com/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, target_lang: targetLang })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    const jobId = data.job_id;
+                    const checkStatus = setInterval(async () => {
+                        const response = await fetch(`https://api.elosito.com/status/${jobId}`);
+                        const statusData = await response.json();
+
+                        if (statusData.status === 'completed') {
+                            clearInterval(checkStatus);
+
+                            const subtitleLang = statusData.subtitle_lang;
+                            const videoId = statusData.video_id;
+                            const firstChar = videoId[0].toUpperCase(); // BÜYÜK HARF önemli!
+
+                            document.getElementById('result').innerHTML = `
+                                🎉 İşlem Tamamlandı!<br><br>
+                                📌 Orijinal:<br>
+                                - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.json" target="_blank">JSON İndir</a><br>
+                                - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.txt" target="_blank">TXT İndir</a><br><br>
+
+                                🌍 Çeviri:<br>
+                                - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.json" target="_blank">JSON İndir</a><br>
+                                - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.txt" target="_blank">TXT İndir</a>
+                            `;
+                        } else if (statusData.status === 'error') {
+                            clearInterval(checkStatus);
+                            document.getElementById('result').innerHTML = `❌ Hata: ${statusData.message}`;
+                        }
+                    }, 5000);
+                } else {
+                    document.getElementById('result').innerHTML = `❌ Hata: ${data.message}`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('result').innerHTML = `❌ İstek sırasında hata oluştu: ${err}`;
+            });
+        }
+    </script>
+</body>
+</html>
