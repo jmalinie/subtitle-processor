@@ -1,20 +1,21 @@
 import os
 
-def get_namespace_id(source_lang, video_id):
-    popular_langs = {'en', 'es', 'de', 'fr', 'ru', 'zh'}
-    special_langs = {'ja', 'ko', 'ar', 'pt', 'it', 'hi', 'tr', 'nl', 'sv', 'el', 'pl', 'vi', 'th', 'id'}
-
+def get_kv_namespace(subtitle_lang, video_id, is_translated=False):
+    lang_upper = subtitle_lang.upper()
     first_char = video_id[0].upper()
 
-    if source_lang in popular_langs:
-        env_name = f"KV_{source_lang.upper()}_ORIGINAL_{first_char}"
-    elif source_lang in special_langs:
-        env_name = f"KV_{source_lang.upper()}_ORIGINAL"
+    special_langs = ["EN", "ES", "DE", "FR", "RU", "ZH"]
+    secondary_langs = ["JA", "KO", "AR", "PT", "IT", "HI", "TR", "NL", "SV", "EL", "PL", "VI", "TH", "ID"]
+
+    if lang_upper in special_langs:
+        namespace_id = os.getenv(f"KV_{lang_upper}_{'TRANSLATED' if is_translated else 'ORIGINAL'}_{first_char}",
+                                 os.getenv(f"KV_{lang_upper}_{'TRANSLATED' if is_translated else 'ORIGINAL'}_DEFAULT"))
+    elif lang_upper in secondary_langs:
+        namespace_id = os.getenv(f"KV_{lang_upper}_{'TRANSLATED' if is_translated else 'ORIGINAL'}")
     else:
-        env_name = "KV_OTHER_LANGS_ORIGINAL"
+        namespace_id = os.getenv(f"KV_OTHER_LANGUAGES_{'TRANSLATED' if is_translated else 'ORIGINAL'}")
 
-    namespace_id = os.getenv(env_name)
     if not namespace_id:
-        raise Exception(f"Namespace tanımlı değil: {env_name}")
-    return namespace_id
+        raise Exception(f"KV namespace tanımlı değil: Dil: {subtitle_lang}, Harf: {first_char}")
 
+    return namespace_id
