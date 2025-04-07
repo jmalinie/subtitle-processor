@@ -2,7 +2,7 @@ import os
 import re
 from subtitles_fetcher import fetch_subtitles
 from r2_uploader import upload_to_r2
-from kv_writer import write_to_kv, check_kv_exists
+from kv_writer import write_to_kv, check_kv_exists, read_from_kv
 
 def extract_video_id(url: str) -> str:
     match = re.search(r"(?:v=|youtu\.be/)([\w-]{11})", url)
@@ -14,7 +14,6 @@ def get_kv_namespace(subtitle_lang, video_id):
     lang_upper = subtitle_lang.upper()
     first_char = video_id[0].upper()
 
-    # özel dillere göre KV namespace düzenlemesi
     special_langs = ["EN", "ES", "DE", "FR", "RU", "ZH"]
     secondary_langs = ["JA", "KO", "AR", "PT", "IT", "HI", "TR", "NL", "SV", "EL", "PL", "VI", "TH", "ID"]
 
@@ -34,16 +33,16 @@ def process_subtitles(youtube_url: str, target_lang: str) -> tuple:
     video_id = extract_video_id(youtube_url)
     first_char = video_id[0].upper()
 
-    # Altyazı mevcut mu kontrolü (KV):
-    subtitle_lang = 'en'  # varsayılan ilk dil genellikle İngilizce olur
+    subtitle_lang = 'en'
     namespace_id = get_kv_namespace(subtitle_lang, video_id)
     kv_key = f"{subtitle_lang}:{video_id}:original"
 
+    # KV kontrol ediliyor
     if check_kv_exists(kv_key, namespace_id):
-        print("✅ KV üzerinde zaten mevcut, tekrar yükleme yapılmıyor.")
-        return video_id, subtitle_lang
+        kv_data = read_from_kv(kv_key, namespace_id)
+        print("✅ KV üzerinde mevcut, tekrar yükleme yapılmıyor.")
+        return video_id, subtitle_lang, kv_data["json"], kv_data["txt"]
 
-    # KV'de yoksa altyazıyı getir ve işle
     json_path, txt_path, subtitle_lang = fetch_subtitles(video_id)
 
     if not json_path or not txt_path:
@@ -58,4 +57,4 @@ def process_subtitles(youtube_url: str, target_lang: str) -> tuple:
     kv_value = {"json": json_key, "txt": txt_key}
     write_to_kv(kv_key, kv_value, namespace_id)
 
-    return video_id, subtitle_lang
+    return video_id, subtitle_lang, json_key, txt_key
