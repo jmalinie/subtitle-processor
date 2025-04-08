@@ -33,32 +33,29 @@ def process_subtitles(youtube_url: str, target_lang: str):
     video_id = extract_video_id(youtube_url)
     first_char = video_id[0].upper()
 
-    # Tüm altyazıları çek
     subtitles_fetched = fetch_subtitles(video_id)
 
     results = []
 
-    for json_path, txt_path, subtitle_lang in subtitles_fetched:
+    for txt_path, srt_path, subtitle_lang in subtitles_fetched:
         namespace_id = get_kv_namespace(subtitle_lang, video_id)
         kv_key = f"{subtitle_lang}:{video_id}:original"
 
-        # KV kontrol ediliyor
         if check_kv_exists(kv_key, namespace_id):
             kv_data = read_from_kv(kv_key, namespace_id)
             print(f"✅ {subtitle_lang} KV üzerinde mevcut, tekrar yükleme yapılmıyor.")
-            results.append((video_id, subtitle_lang, kv_data["json"], kv_data["txt"]))
+            results.append((video_id, subtitle_lang, kv_data["srt"], kv_data["txt"]))
             continue
 
-        # Eğer KV'de yoksa R2'ye ve KV'ye yaz
-        json_key = f"{subtitle_lang}/original/{first_char}/{video_id}.json"
+        srt_key = f"{subtitle_lang}/original/{first_char}/{video_id}.srt"
         txt_key = f"{subtitle_lang}/original/{first_char}/{video_id}.txt"
 
-        upload_to_r2(json_path, json_key)
+        upload_to_r2(srt_path, srt_key)
         upload_to_r2(txt_path, txt_key)
 
-        kv_value = {"json": json_key, "txt": txt_key}
+        kv_value = {"srt": srt_key, "txt": txt_key}
         write_to_kv(kv_key, kv_value, namespace_id)
 
-        results.append((video_id, subtitle_lang, json_key, txt_key))
+        results.append((video_id, subtitle_lang, srt_key, txt_key))
 
     return results

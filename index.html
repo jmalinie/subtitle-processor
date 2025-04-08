@@ -2,10 +2,10 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>YouTube Altyazı Çevirici v1.2</title>
+    <title>YouTube Altyazı Çevirici v1.3</title>
 </head>
 <body>
-    <h2>🎬 YouTube Altyazı Çevirici v1.2</h2>
+    <h2>🎬 YouTube Altyazı Çevirici v1.3</h2>
 
     <label for="youtubeURL">YouTube URL:</label><br>
     <input type="text" id="youtubeURL" style="width:400px;" placeholder="https://www.youtube.com/watch?v=..."><br><br>
@@ -49,13 +49,16 @@
 
                             statusData.translations.forEach(translation => {
                                 const subtitleLang = translation.subtitle_lang;
+                                const videoId = statusData.video_id;
+                                const firstChar = videoId[0].toUpperCase();
+
                                 content += `
                                     📌 Orijinal (${subtitleLang}):<br>
-                                    - <a href="https://elosito.com/${translation.original_json_key}" target="_blank">JSON İndir</a><br>
+                                    - <a href="https://elosito.com/${translation.original_srt_key}" target="_blank">SRT İndir</a><br>
                                     - <a href="https://elosito.com/${translation.original_txt_key}" target="_blank">TXT İndir</a><br><br>
 
                                     🌍 Çeviri (${subtitleLang} ➡️ ${targetLang}):<br>
-                                    - <a href="https://elosito.com/${translation.translated_json_key}" target="_blank">JSON İndir</a><br>
+                                    - <a href="https://elosito.com/${translation.translated_srt_key}" target="_blank">SRT İndir</a><br>
                                     - <a href="https://elosito.com/${translation.translated_txt_key}" target="_blank">TXT İndir</a><br><br>
                                 `;
                             });
