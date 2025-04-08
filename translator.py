@@ -30,7 +30,7 @@ Instructions:
 - Return only the translated subtitles in valid SRT format, without extra comments or formatting."""
 
     translation_result = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": original_srt_content},

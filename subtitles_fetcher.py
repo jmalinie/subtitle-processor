@@ -29,9 +29,9 @@ def fetch_subtitles(video_id):
 def to_srt(subtitle_entries):
     srt_output = []
     for i, entry in enumerate(subtitle_entries, start=1):
-        start_time = format_srt_timestamp(entry['start'])
-        end_time = format_srt_timestamp(entry['start'] + entry['duration'])
-        text = entry['text']
+        start_time = format_srt_timestamp(entry.start)
+        end_time = format_srt_timestamp(entry.start + entry.duration)
+        text = entry.text
         srt_output.append(f"{i}\n{start_time} --> {end_time}\n{text}\n")
     return "\n".join(srt_output)
 
