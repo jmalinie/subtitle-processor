@@ -25,9 +25,9 @@ def translate_subtitles(video_id, source_lang, target_lang):
     subtitle_texts = [entry["text"] for entry in original_subtitles["subtitles"]]
 
     translation_result = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": f"Translate each line from {source_lang} to {target_lang}, preserve line order and count exactly."},
+            {"role": "system", "content": f"Translate from {source_lang} to {target_lang}, strictly do not add any extra comment. Just pure translate."},
             {"role": "user", "content": "\n".join(subtitle_texts)},
         ],
         temperature=0.3,
