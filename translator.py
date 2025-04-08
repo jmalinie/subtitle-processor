@@ -12,7 +12,7 @@ def translate_chunk(chunk, source_lang, target_lang):
 
 Instructions:
 - Keep the exact same subtitle block numbers and timestamps. Do NOT modify or merge timestamps.
-- Translate each subtitle block separately. Do NOT merge or split subtitle blocks under any circumstances.
+- Do NOT merge or split subtitle blocks under any circumstances.
 - Provide only the translated subtitles in valid SRT format, preserving the original number of blocks exactly.
 - Do not add extra comments, notes, or formatting."""
 
