@@ -29,30 +29,36 @@ def get_kv_namespace(subtitle_lang, video_id):
 
     return namespace_id
 
-def process_subtitles(youtube_url: str, target_lang: str) -> tuple:
+def process_subtitles(youtube_url: str, target_lang: str):
     video_id = extract_video_id(youtube_url)
     first_char = video_id[0].upper()
 
-    # Altyazının orijinal dili otomatik algılanıyor.
-    json_path, txt_path, subtitle_lang = fetch_subtitles(video_id)
+    # Tüm altyazıları çek
+    subtitles_fetched = fetch_subtitles(video_id)
 
-    namespace_id = get_kv_namespace(subtitle_lang, video_id)
-    kv_key = f"{subtitle_lang}:{video_id}:original"
+    results = []
 
-    # KV kontrol ediliyor
-    if check_kv_exists(kv_key, namespace_id):
-        kv_data = read_from_kv(kv_key, namespace_id)
-        print("✅ KV üzerinde mevcut, tekrar yükleme yapılmıyor.")
-        return video_id, subtitle_lang, kv_data["json"], kv_data["txt"]
+    for json_path, txt_path, subtitle_lang in subtitles_fetched:
+        namespace_id = get_kv_namespace(subtitle_lang, video_id)
+        kv_key = f"{subtitle_lang}:{video_id}:original"
 
-    # Eğer KV'de yoksa R2'ye ve KV'ye yaz
-    json_key = f"{subtitle_lang}/original/{first_char}/{video_id}.json"
-    txt_key = f"{subtitle_lang}/original/{first_char}/{video_id}.txt"
+        # KV kontrol ediliyor
+        if check_kv_exists(kv_key, namespace_id):
+            kv_data = read_from_kv(kv_key, namespace_id)
+            print(f"✅ {subtitle_lang} KV üzerinde mevcut, tekrar yükleme yapılmıyor.")
+            results.append((video_id, subtitle_lang, kv_data["json"], kv_data["txt"]))
+            continue
 
-    upload_to_r2(json_path, json_key)
-    upload_to_r2(txt_path, txt_key)
+        # Eğer KV'de yoksa R2'ye ve KV'ye yaz
+        json_key = f"{subtitle_lang}/original/{first_char}/{video_id}.json"
+        txt_key = f"{subtitle_lang}/original/{first_char}/{video_id}.txt"
 
-    kv_value = {"json": json_key, "txt": txt_key}
-    write_to_kv(kv_key, kv_value, namespace_id)
+        upload_to_r2(json_path, json_key)
+        upload_to_r2(txt_path, txt_key)
 
-    return video_id, subtitle_lang, json_key, txt_key
+        kv_value = {"json": json_key, "txt": txt_key}
+        write_to_kv(kv_key, kv_value, namespace_id)
+
+        results.append((video_id, subtitle_lang, json_key, txt_key))
+
+    return results
