@@ -37,7 +37,7 @@ Instructions:
             {"role": "user", "content": original_srt_content},
         ],
         temperature=0.2,
-        max_tokens=4096
+        
     )
 
     translated_srt_content = translation_result.choices[0].message.content.strip()
