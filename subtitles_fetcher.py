@@ -19,9 +19,11 @@ def fetch_subtitles(video_id):
     json_path = f"downloads/{video_id}_{subtitle_lang}.json"
     txt_path = f"downloads/{video_id}_{subtitle_lang}.txt"
 
+    # JSON dosyasını okunabilir halde oluşturmak için güncellendi
     with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(response_json, f, ensure_ascii=False)
+        json.dump(response_json, f, ensure_ascii=False, indent=4)
 
+    # TXT dosyası değişmeden aynı kalabilir
     with open(txt_path, 'w', encoding='utf-8') as f:
         for entry in subtitle_data:
             f.write(entry.text + '\n')
