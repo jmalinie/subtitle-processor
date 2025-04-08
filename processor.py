@@ -33,7 +33,9 @@ def process_subtitles(youtube_url: str, target_lang: str) -> tuple:
     video_id = extract_video_id(youtube_url)
     first_char = video_id[0].upper()
 
-    subtitle_lang = 'en'
+    # Altyazının orijinal dili otomatik algılanıyor.
+    json_path, txt_path, subtitle_lang = fetch_subtitles(video_id)
+
     namespace_id = get_kv_namespace(subtitle_lang, video_id)
     kv_key = f"{subtitle_lang}:{video_id}:original"
 
@@ -43,11 +45,7 @@ def process_subtitles(youtube_url: str, target_lang: str) -> tuple:
         print("✅ KV üzerinde mevcut, tekrar yükleme yapılmıyor.")
         return video_id, subtitle_lang, kv_data["json"], kv_data["txt"]
 
-    json_path, txt_path, subtitle_lang = fetch_subtitles(video_id)
-
-    if not json_path or not txt_path:
-        raise Exception("Altyazılar alınamadı")
-
+    # Eğer KV'de yoksa R2'ye ve KV'ye yaz
     json_key = f"{subtitle_lang}/original/{first_char}/{video_id}.json"
     txt_key = f"{subtitle_lang}/original/{first_char}/{video_id}.txt"
 
