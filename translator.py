@@ -1,5 +1,4 @@
 import os
-import json
 from openai import OpenAI
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv, check_kv_exists, read_from_kv
@@ -16,65 +15,51 @@ def translate_subtitles(video_id, source_lang, target_lang):
     if check_kv_exists(kv_key, namespace_id):
         kv_data = read_from_kv(kv_key, namespace_id)
         print("✅ Çeviri KV üzerinde mevcut, tekrar çeviri yapılmıyor.")
-        return kv_data["json"], kv_data["txt"]
+        return kv_data["srt"], kv_data["txt"]
 
-    original_json_path = f"downloads/{video_id}_{source_lang}.json"
-    with open(original_json_path, "r", encoding="utf-8") as file:
-        original_subtitles = json.load(file)
+    original_srt_path = f"downloads/{video_id}_{source_lang}.srt"
+    with open(original_srt_path, "r", encoding="utf-8") as file:
+        original_srt_content = file.read()
 
-    subtitle_texts = [entry["text"] for entry in original_subtitles["subtitles"]]
+    prompt = f"""You will translate the provided subtitles from {source_lang} to {target_lang}.
+
+Instructions:
+- Preserve the original numbering and timestamps exactly as provided.
+- Translate the subtitle text naturally, fluently, and accurately.
+- Do NOT merge or split subtitle blocks.
+- Return only the translated subtitles in valid SRT format, without extra comments or formatting."""
 
     translation_result = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
-            {"role": "system", "content": f""" You are translating subtitles for a video from {source_lang} to {target_lang}. The number of subtitles in your translation must exactly match the original subtitles. Do not merge or split subtitle entries.
-Translate each subtitle line naturally and fluently, maintaining the original meaning, context, tone, and style. 
-Do not add or omit information, but feel free to slightly adjust sentence structure to achieve a natural-sounding translation in {target_lang}. 
-Ensure the overall meaning and message of the video remain accurate and clear.
-Return only the translated text without any additional explanations."""},
-            {"role": "user", "content": "\n".join(subtitle_texts)},
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": original_srt_content},
         ],
-        temperature=0.5,
+        temperature=0.2,
         max_tokens=4096
     )
 
-    translated_texts = translation_result.choices[0].message.content.strip().split("\n")
+    translated_srt_content = translation_result.choices[0].message.content.strip()
 
-    # Uyarıya çevrilen kontrol noktası
-    if len(translated_texts) != len(subtitle_texts):
-        print(f"⚠️ Satır sayıları eşleşmiyor! Orijinal: {len(subtitle_texts)}, Çeviri: {len(translated_texts)}")
-
-    # Güvenli şekilde eşleştir, eşleşmeyen durumlarda orijinali kullan
-    translated_subtitles = {
-        "language_code": target_lang,
-        "subtitles": [
-            {
-                "text": translated_texts[i] if i < len(translated_texts) else subtitle_texts[i],
-                "start": entry["start"],
-                "duration": entry["duration"]
-            }
-            for i, entry in enumerate(original_subtitles["subtitles"])
-        ]
-    }
-
-    json_path = f"downloads/{video_id}_{source_lang}_{target_lang}.json"
+    srt_path = f"downloads/{video_id}_{source_lang}_{target_lang}.srt"
     txt_path = f"downloads/{video_id}_{source_lang}_{target_lang}.txt"
 
-    with open(json_path, "w", encoding="utf-8") as file:
-        json.dump(translated_subtitles, file, ensure_ascii=False, indent=4)
+    with open(srt_path, "w", encoding="utf-8") as file:
+        file.write(translated_srt_content)
 
     with open(txt_path, "w", encoding="utf-8") as file:
-        file.write("\n".join([sub["text"] for sub in translated_subtitles["subtitles"]]))
+        subtitle_lines = [block.split('\n', 2)[2] for block in translated_srt_content.strip().split('\n\n') if len(block.split('\n', 2)) == 3]
+        file.write("\n".join(subtitle_lines))
 
-    json_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.json"
+    srt_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.srt"
     txt_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.txt"
 
-    upload_to_r2(json_path, json_key)
+    upload_to_r2(srt_path, srt_key)
     upload_to_r2(txt_path, txt_key)
 
-    kv_value = {"json": json_key, "txt": txt_key}
+    kv_value = {"srt": srt_key, "txt": txt_key}
     write_to_kv(kv_key, kv_value, namespace_id)
 
     print("✅ Çeviri yapıldı ve KV'ye yazıldı.")
 
-    return json_key, txt_key
+    return srt_key, txt_key
