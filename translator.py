@@ -21,13 +21,13 @@ def translate_subtitles(video_id, source_lang, target_lang):
     with open(original_srt_path, "r", encoding="utf-8") as file:
         original_srt_content = file.read()
 
-    prompt = f"""You will translate the provided subtitles from {source_lang} to {target_lang}.
+    prompt = f"""You will translate subtitles from {source_lang} to {target_lang}.
 
 Instructions:
-- Preserve the original numbering and timestamps exactly as provided.
-- Translate the subtitle text naturally, fluently, and accurately.
-- Do NOT merge or split subtitle blocks.
-- Return only the translated subtitles in valid SRT format, without extra comments or formatting."""
+- Maintain exactly the same number of subtitle blocks, numbering, and timestamps as provided. Do NOT alter timestamps or block numbers.
+- Translate subtitle texts naturally, fluently, and contextually accurate.
+- Never merge or split subtitle blocks.
+- Return ONLY the translated subtitles in valid SRT format, without explanations, notes, or additional formatting."""
 
     translation_result = client.chat.completions.create(
         model="gpt-4o-mini",
