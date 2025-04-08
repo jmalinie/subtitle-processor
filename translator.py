@@ -9,17 +9,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def translate_subtitles(video_id, source_lang, target_lang):
     first_char = video_id[0].upper()
+
     kv_key = f"{source_lang}:{video_id}:{target_lang}"
-    
-    # Öncelikle KV namespace belirleyelim (çeviri için)
     namespace_id = get_kv_namespace(source_lang, video_id, is_translated=True)
 
-    # KV üzerinde mevcut mu kontrolü
+    # Önce KV kontrol ediliyor
     if check_kv_exists(kv_key, namespace_id):
-        print("✅ Çeviri KV üzerinde mevcut, tekrar çeviri yapılmayacak.")
         kv_data = read_from_kv(kv_key, namespace_id)
+        print("✅ Çeviri KV üzerinde mevcut, tekrar çeviri yapılmıyor.")
         return kv_data["json"], kv_data["txt"]
 
+    # KV'de yoksa yeni çeviri yapılacak
     original_json_path = f"downloads/{video_id}_{source_lang}.json"
 
     with open(original_json_path, "r", encoding="utf-8") as file:
@@ -67,8 +67,8 @@ def translate_subtitles(video_id, source_lang, target_lang):
     upload_to_r2(txt_path, txt_key)
 
     kv_value = {"json": json_key, "txt": txt_key}
-
-    # KV’ye yaz
     write_to_kv(kv_key, kv_value, namespace_id)
+
+    print("✅ Çeviri yapıldı ve KV'ye yazıldı.")
 
     return json_key, txt_key
