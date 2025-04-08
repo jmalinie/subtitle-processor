@@ -45,20 +45,22 @@
                         if (statusData.status === 'completed') {
                             clearInterval(checkStatus);
 
-                            const subtitleLang = statusData.subtitle_lang;
-                            const videoId = statusData.video_id;
-                            const firstChar = videoId[0].toUpperCase(); // BÜYÜK HARF önemli!
+                            let content = "🎉 İşlem Tamamlandı!<br><br>";
 
-                            document.getElementById('result').innerHTML = `
-                                🎉 İşlem Tamamlandı!<br><br>
-                                📌 Orijinal:<br>
-                                - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.json" target="_blank">JSON İndir</a><br>
-                                - <a href="https://elosito.com/${subtitleLang}/original/${firstChar}/${videoId}.txt" target="_blank">TXT İndir</a><br><br>
+                            statusData.translations.forEach(translation => {
+                                const subtitleLang = translation.subtitle_lang;
+                                content += `
+                                    📌 Orijinal (${subtitleLang}):<br>
+                                    - <a href="https://elosito.com/${translation.original_json_key}" target="_blank">JSON İndir</a><br>
+                                    - <a href="https://elosito.com/${translation.original_txt_key}" target="_blank">TXT İndir</a><br><br>
 
-                                🌍 Çeviri:<br>
-                                - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.json" target="_blank">JSON İndir</a><br>
-                                - <a href="https://elosito.com/${subtitleLang}/translated/${targetLang}/${firstChar}/${videoId}.txt" target="_blank">TXT İndir</a>
-                            `;
+                                    🌍 Çeviri (${subtitleLang} ➡️ ${targetLang}):<br>
+                                    - <a href="https://elosito.com/${translation.translated_json_key}" target="_blank">JSON İndir</a><br>
+                                    - <a href="https://elosito.com/${translation.translated_txt_key}" target="_blank">TXT İndir</a><br><br>
+                                `;
+                            });
+
+                            document.getElementById('result').innerHTML = content;
                         } else if (statusData.status === 'error') {
                             clearInterval(checkStatus);
                             document.getElementById('result').innerHTML = `❌ Hata: ${statusData.message}`;
