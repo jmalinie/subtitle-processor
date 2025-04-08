@@ -3,8 +3,33 @@ from openai import OpenAI
 from r2_uploader import upload_to_r2
 from kv_writer import write_to_kv, check_kv_exists, read_from_kv
 from kv_namespace_resolver import get_kv_namespace
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def translate_chunk(chunk, source_lang, target_lang):
+    prompt = f"""Translate the provided subtitles from {source_lang} to {target_lang}.
+
+Instructions:
+- Keep the exact same subtitle block numbers and timestamps. Do NOT modify or merge timestamps.
+- Translate each subtitle block separately. Do NOT merge or split subtitle blocks under any circumstances.
+- Provide only the translated subtitles in valid SRT format, preserving the original number of blocks exactly.
+- Do not add extra comments, notes, or formatting."""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": chunk},
+        ],
+        temperature=0.2,
+    )
+
+    return response.choices[0].message.content.strip()
+
+def chunk_blocks(blocks, chunk_size=15):
+    for i in range(0, len(blocks), chunk_size):
+        yield "\n\n".join(blocks[i:i + chunk_size])
 
 def translate_subtitles(video_id, source_lang, target_lang):
     first_char = video_id[0].upper()
@@ -21,26 +46,20 @@ def translate_subtitles(video_id, source_lang, target_lang):
     with open(original_srt_path, "r", encoding="utf-8") as file:
         original_srt_content = file.read()
 
-    prompt = f"""Translate the provided subtitles from {source_lang} to {target_lang}.
+    blocks = original_srt_content.strip().split("\n\n")
+    chunked_blocks = list(chunk_blocks(blocks, chunk_size=15))
 
-Instructions:
-- Keep the exact same subtitle block numbers and timestamps. Do NOT modify or merge timestamps.
-- Translate each subtitle block separately, line by line. Do NOT merge or split subtitle blocks under any circumstances.
-- Provide only the translated subtitles in valid SRT format, preserving the original number of blocks exactly.
-- Do not add extra comments, notes, or formatting."""
+    translated_chunks = [None] * len(chunked_blocks)
 
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(translate_chunk, chunk, source_lang, target_lang): idx
+                   for idx, chunk in enumerate(chunked_blocks)}
 
-    translation_result = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": original_srt_content},
-        ],
-        temperature=0.2,
-        
-    )
+        for future in as_completed(futures):
+            idx = futures[future]
+            translated_chunks[idx] = future.result()
 
-    translated_srt_content = translation_result.choices[0].message.content.strip()
+    translated_srt_content = "\n\n".join(translated_chunks)
 
     srt_path = f"downloads/{video_id}_{source_lang}_{target_lang}.srt"
     txt_path = f"downloads/{video_id}_{source_lang}_{target_lang}.txt"
