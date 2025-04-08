@@ -36,15 +36,16 @@ def translate_subtitles(video_id, source_lang, target_lang):
 
     translated_texts = translation_result.choices[0].message.content.strip().split("\n")
 
-    # Satır sayısı eşleşmezse hata önleme
+    # Uyarıya çevrilen kontrol noktası
     if len(translated_texts) != len(subtitle_texts):
-        raise ValueError(f"Satır sayıları eşleşmiyor! Orijinal: {len(subtitle_texts)}, Çeviri: {len(translated_texts)}")
+        print(f"⚠️ Satır sayıları eşleşmiyor! Orijinal: {len(subtitle_texts)}, Çeviri: {len(translated_texts)}")
 
+    # Güvenli şekilde eşleştir, eşleşmeyen durumlarda orijinali kullan
     translated_subtitles = {
         "language_code": target_lang,
         "subtitles": [
             {
-                "text": translated_texts[i],
+                "text": translated_texts[i] if i < len(translated_texts) else subtitle_texts[i],
                 "start": entry["start"],
                 "duration": entry["duration"]
             }
@@ -56,10 +57,10 @@ def translate_subtitles(video_id, source_lang, target_lang):
     txt_path = f"downloads/{video_id}_{source_lang}_{target_lang}.txt"
 
     with open(json_path, "w", encoding="utf-8") as file:
-        json.dump(translated_subtitles, file, ensure_ascii=False)
+        json.dump(translated_subtitles, file, ensure_ascii=False, indent=4)
 
     with open(txt_path, "w", encoding="utf-8") as file:
-        file.write("\n".join(translated_texts))
+        file.write("\n".join([sub["text"] for sub in translated_subtitles["subtitles"]]))
 
     json_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.json"
     txt_key = f"{source_lang}/translated/{target_lang}/{first_char}/{video_id}.txt"
