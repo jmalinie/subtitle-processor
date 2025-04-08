@@ -17,16 +17,16 @@ def background_task(job_id, video_id, target_lang, url):
 
         translations = []
 
-        for subtitle in results:
-            video_id, subtitle_lang, json_key, txt_key = subtitle
-            translate_json_key, translate_txt_key = translate_subtitles(video_id, subtitle_lang, target_lang)
+        for result in results:
+            video_id, subtitle_lang, original_srt_key, original_txt_key = result
+            translated_srt_key, translated_txt_key = translate_subtitles(video_id, subtitle_lang, target_lang)
 
             translations.append({
                 "subtitle_lang": subtitle_lang,
-                "original_json_key": json_key,
-                "original_txt_key": txt_key,
-                "translated_json_key": translate_json_key,
-                "translated_txt_key": translate_txt_key
+                "original_srt_key": original_srt_key,
+                "original_txt_key": original_txt_key,
+                "translated_srt_key": translated_srt_key,
+                "translated_txt_key": translated_txt_key
             })
 
         jobs[job_id] = {

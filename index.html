@@ -45,25 +45,21 @@
                         if (statusData.status === 'completed') {
                             clearInterval(checkStatus);
 
-                            let content = "🎉 İşlem Tamamlandı!<br><br>";
+                            let translationsContent = "🎉 İşlem Tamamlandı!<br><br>";
 
                             statusData.translations.forEach(translation => {
-                                const subtitleLang = translation.subtitle_lang;
-                                const videoId = statusData.video_id;
-                                const firstChar = videoId[0].toUpperCase();
-
-                                content += `
-                                    📌 Orijinal (${subtitleLang}):<br>
+                                translationsContent += `
+                                    📌 Orijinal (${translation.subtitle_lang}):<br>
                                     - <a href="https://elosito.com/${translation.original_srt_key}" target="_blank">SRT İndir</a><br>
                                     - <a href="https://elosito.com/${translation.original_txt_key}" target="_blank">TXT İndir</a><br><br>
 
-                                    🌍 Çeviri (${subtitleLang} ➡️ ${targetLang}):<br>
+                                    🌍 Çeviri (${translation.subtitle_lang} ➡️ ${targetLang}):<br>
                                     - <a href="https://elosito.com/${translation.translated_srt_key}" target="_blank">SRT İndir</a><br>
                                     - <a href="https://elosito.com/${translation.translated_txt_key}" target="_blank">TXT İndir</a><br><br>
                                 `;
                             });
 
-                            document.getElementById('result').innerHTML = content;
+                            document.getElementById('result').innerHTML = translationsContent;
                         } else if (statusData.status === 'error') {
                             clearInterval(checkStatus);
                             document.getElementById('result').innerHTML = `❌ Hata: ${statusData.message}`;
