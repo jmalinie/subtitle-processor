@@ -13,9 +13,15 @@ jobs = {}
 
 def background_task(job_id, video_id, subtitle_lang, target_lang, url):
     try:
-        video_id, subtitle_lang = process_subtitles(url, target_lang)
+        video_id, subtitle_lang, json_key, txt_key = process_subtitles(url, target_lang)
         translate_subtitles(video_id, subtitle_lang, target_lang)
-        jobs[job_id] = {"status": "completed", "video_id": video_id, "subtitle_lang": subtitle_lang}
+        jobs[job_id] = {
+            "status": "completed",
+            "video_id": video_id,
+            "subtitle_lang": subtitle_lang,
+            "json_key": json_key,
+            "txt_key": txt_key
+        }
     except Exception as e:
         jobs[job_id] = {"status": "error", "message": str(e)}
 
