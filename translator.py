@@ -27,14 +27,14 @@ def translate_subtitles(video_id, source_lang, target_lang):
     translation_result = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": f""" You are translating subtitles for a video from {source_lang} to {target_lang}. 
+            {"role": "system", "content": f""" You are translating subtitles for a video from {source_lang} to {target_lang}. The number of subtitles in your translation must exactly match the original subtitles. Do not merge or split subtitle entries.
 Translate each subtitle line naturally and fluently, maintaining the original meaning, context, tone, and style. 
 Do not add or omit information, but feel free to slightly adjust sentence structure to achieve a natural-sounding translation in {target_lang}. 
 Ensure the overall meaning and message of the video remain accurate and clear.
 Return only the translated text without any additional explanations."""},
             {"role": "user", "content": "\n".join(subtitle_texts)},
         ],
-        temperature=0.3,
+        temperature=0.5,
         max_tokens=4096
     )
 
